@@ -154,10 +154,10 @@ Ex.div.piv <- Ex.div.piv %>% as.data.frame()
 
 Ex.div.piv$Year <- Ex.div.piv$Year %>% as.integer()
 
-Ex.div.piv %>% filter(`Country Name` == "China, P.R.: Mainland" | `Country Name` == "Ghana" | `Country Name` == "Korea, Republic of") %>%
-  ggplot(.,aes(x=Year, y=Val, group=`Country Name`, colour=`Country Name`)) +
-  geom_line(size=2.0) +
-  theme_jhp()
+# Ex.div.piv %>% filter(`Country Name` == "China, P.R.: Mainland" | `Country Name` == "Ghana" | `Country Name` == "Korea, Republic of") %>%
+#   ggplot(.,aes(x=Year, y=Val, group=`Country Name`, colour=`Country Name`)) +
+#   geom_line(size=2.0) +
+#   theme_jhp()
 
 Aft_name[,3] = Aft_name[,3] %>% as.numeric() 
 Aft_name[Aft_name == "#N/A"] <- NA
@@ -201,7 +201,7 @@ aft.merge.multi <- aft.merge.multi[-(which(is.na(aft.merge.multi["ISO3N"]))),]
 aft.merge.bi.country <- aft.merge.bi.country[-(which(is.na(aft.merge.bi.country["ISO3N"]))),]
 
 export.merge$ISO3N <- export.merge$ISO3N %>% as.numeric()
-
+export.merge <- drop_na(export.merge)
 aft.merge$ISO3N <- as.numeric(aft.merge$ISO3N)
 # a <- left_join(aft.merge, agri.merge)
 ##################cowipe
@@ -219,34 +219,52 @@ library(WDI)
 
 #GDP per cap
 gdppc <- WDI(indicator = "NY.GDP.PCAP.CD")
-
+gdppc$ISO3N <-gdppc$iso2c %>% countrycode(origin = "iso2c", destination = "iso3n")
+gdppc <- drop_na(gdppc)
 #Export of GDP
 export <- WDI(indicator = "NE.EXP.GNFS.ZS")
-
+export$ISO3N <-export$iso2c %>% countrycode(origin = "iso2c", destination = "iso3n")
+export <- drop_na(export)
 #FDI
 fdi <- WDI(indicator = "BX.KLT.DINV.WD.GD.ZS")
-
+fdi$ISO3N <-fdi$iso2c %>% countrycode(origin = "iso2c", destination = "iso3n")
+fdi <- drop_na(fdi)
 #natural
 natrual <- WDI(indicator = "NY.GDP.TOTL.RT.ZS")
-
+natrual$ISO3N <-natrual$iso2c %>% countrycode(origin = "iso2c", destination = "iso3n")
+natrual <- drop_na(natrual)
 #inflation
 inflation <- WDI(indicator = "FP.CPI.TOTL.ZG")
-
+inflation$ISO3N <-inflation$iso2c %>% countrycode(origin = "iso2c", destination = "iso3n")
+inflation <- drop_na(inflation)
 #arms
-arms <- WDI(indicator = "MS.MIL.MPRT.KD")
-
+arms <- WDI(indicator = "MS.MIL.XPND.GD.ZS")
+arms$ISO3N <-arms$iso2c %>% countrycode(origin = "iso2c", destination = "iso3n")
+arms <- drop_na(arms)
 #population
 population <- WDI(indicator = "SP.POP.TOTL")
+population$ISO3N <-population$iso2c %>% countrycode(origin = "iso2c", destination = "iso3n")
+population <- drop_na(population)
+#Balance
+balance <- WDI(indicator = "BN.CAB.XOKA.GD.ZS")
+balance$ISO3N <-balance$iso2c %>% countrycode(origin = "iso2c", destination = "iso3n")
+balance <- drop_na(balance)
+# GDP Growht
+growth <-  WDI(indicator = "NY.GDP.MKTP.KD.ZG")
+growth$ISO3N <-growth$iso2c %>% countrycode(origin = "iso2c", destination = "iso3n")
+growth <- drop_na(growth)
 
-worldbank <- left_join(gdppc, export)
-worldbank <- left_join(worldbank, fdi)
-worldbank <- left_join(worldbank, natrual)
-worldbank <- left_join(worldbank , inflation)
-worldbank <- left_join(worldbank, arms)
-worldbank <- left_join(worldbank, population)
+worldbank <- full_join(gdppc, export)
+worldbank <- full_join(worldbank, fdi)
+worldbank <- full_join(worldbank, natrual)
+worldbank <- full_join(worldbank , inflation)
+worldbank <- full_join(worldbank, arms)
+worldbank <- full_join(worldbank, population)
+worldbank <- full_join(worldbank, balance)
+worldbank <- full_join(worldbank, growth)
+
 colnames(worldbank)[which(colnames(worldbank)=="year")] <- "Year"
 worldbank$ISO3N <- worldbank$iso2c %>% countrycode(origin = "iso2c", destination = "iso3n")
-worldbank <- drop_na(worldbank)
 #Ethnic
 load("C:/Users/joshu/Desktop/HIEF_data.RData")
 ethnic <- x
@@ -291,7 +309,9 @@ region.name <- drop_na(region.name)
 region.name$ISO3N <- region.name$ISO3C %>% countrycode(origin = 'iso3c', destination = "iso3n")
 region.name <- drop_na(region.name)
 
-final <- left_join(export.merge, aft.merge)
+aft.merge.bi$ISO3N <- aft.merge.bi$ISO3N %>% as.numeric()
+
+final <- full_join(aft.merge.bi, export.merge )
 
 final <- left_join(final, AUT.merge)
 final <- left_join(final, worldbank)
@@ -300,7 +320,7 @@ final <- left_join(final, polity)
 final <- left_join(final, region.name)
 final <- left_join(final, ethnic)
 
-write.csv(final, paste0(getwd(), "/newfinal.csv"))
+# write.csv(final, paste0(getwd(), "/newfinal.csv"))
 # 
 # sample <- AUT.f
 # AUT.f.last <- left_join(sample, region.name)
@@ -329,7 +349,7 @@ write.csv(final, paste0(getwd(), "/newfinal.csv"))
 # 
 # write.csv(AUT.f, "E:/AfT/AUTpersonalism.csv")
 # 
-# pr_fail <- read_csv("E:/AfT/pr_fail.csv")
+pr_fail <- read_csv("E:/AfT/pr_fail.csv")
 # 
 # pr_fail %>% filter(gwf_country == "Argentina"| gwf_country == "Botswana"| gwf_country == "Hungary"| gwf_country == "Congo/Zaire") %>% filter (year > 1960) %>%
 #   ggplot(.,aes(x=year, y= pr_fail, group= gwf_country, colour=gwf_country)) +
@@ -358,12 +378,16 @@ write.csv(final, paste0(getwd(), "/newfinal.csv"))
 # final[,final %>% colnames() %>% length() +1] <- match(final$ISO3C, Aft_name$ISO3C) %>% Aft_name[.,4]
 # colnames(final)[final %>% colnames() %>% length()] <- "ISO3N"
 # final <- left_join(final, ipe.sub)
-# # pr_fail <- pr_fail[-(which(is.na(pr_fail["ISO3N"]))),]
-# final <- left_join(final, pr_fail)
+pr_fail <- pr_fail[,c("year", "cowcode", "pr_fail")]
+pr_fail$ISO3N <- pr_fail$cowcode %>% countrycode(origin= "cown", destination = "iso3n")
+pr_fail <- pr_fail %>% select(!cowcode)
+colnames(pr_fail)[which(colnames(pr_fail)=="year")] <- "Year" 
+pr_fail <- pr_fail[-(which(is.na(pr_fail["ISO3N"]))),]
 
 
 
-write.csv(final, "E:/AfT/final_withnatural.csv")
+
+# write.csv(final, "E:/AfT/final_withnatural.csv")
 
 ## Adding Variables
 library(OECD)
@@ -378,16 +402,16 @@ str(dstruc, max.level = 1)
 total.aid <- get_dataset(dataset = dataset)
 
 total.aid.sum1 <- total.aid[which(total.aid$DONOR==20005),]
-total.aid.sum2 <- total.aid.sum %>% group_by(RECIPIENT, obsTime) %>% summarise(obsValue = sum(obsValue))
+total.aid.sum2 <- total.aid.sum1 %>% group_by(RECIPIENT, obsTime) %>% summarise(obsValue = sum(obsValue))
 
 total.aid.name <- dstruc$RECIPIENT %>% unique()
 
 total.aid.sum2[,length(colnames(total.aid.sum2))+1] <- match(total.aid.sum2$RECIPIENT, total.aid.name$id) %>% total.aid.name[.,2]
-colnames(total.aid.sum2)[length(colnames(total.aid.sum2))] <- "Recipientname"
+colnames(total.aid.sum2)[length(colnames(total.aid.sum2))] <- "AfT.name.old"
 
-total.aid.sum.new.name <- match(total.aid.sum2$Recipientname, Aft_name$AfT.name.old) %>% Aft_name[.,2:5]
+total.aid.sum.new.name <- left_join(total.aid.sum2, Aft_name)
 
-total.aid.sum2 <- cbind(total.aid.sum2, total.aid.sum.new.name)
+total.aid.sum2 <- total.aid.sum.new.name
 total.aid.sum2 <- total.aid.sum2[-(which(is.na(total.aid.sum2["ISO3C"]))),]
 total.aid.sum2 <- total.aid.sum2 %>% group_by(ISO3N, obsTime) %>% summarise(obsValue = sum(obsValue))
 
@@ -395,26 +419,62 @@ total.aid.sum2 <- total.aid.sum2 %>% group_by(ISO3N, obsTime) %>% summarise(obsV
 colnames(total.aid.sum2)[which(colnames(total.aid.sum2)=="obsTime")] <- "Year"
 colnames(total.aid.sum2)[which(colnames(total.aid.sum2)=="obsValue")] <- "Totalaid"
 
+total.aid.sum2$Year <- as.numeric(total.aid.sum2$Year)
+total.aid.sum2$ISO3N <- as.numeric(total.aid.sum2$ISO3N)
+
 total.merge <- total.aid.sum2 %>% as.data.frame()
 total.merge[,2] <- total.merge[,2] %>% as.numeric()
 # total.merge <- total.merge[-(which(is.na(total.merge["ISO3N"]))),]
 # total.merge <- total.merge[-(which(is.na(total.merge["ISO3N"]))),]
-final <- left_join(final, total.merge)
-final[which(is.na(final[,length(colnames(final))])),length(colnames(final))] <- 0
 
-## polity5
-pol.compt <- read_xls("E:/AfT/polity5.xls")
-pol.compt <- pol.compt %>% as.data.frame()
-colnames(pol.compt)[which(colnames(pol.compt)=="year")] <- "Year"
-pol.compt[,colnames(pol.compt)%>%length()+1] <- match(pol.compt[,1], cow_country[,1]) %>% cow_country[.,2]
-colnames(pol.compt)[length(colnames(pol.compt))] <- "ISO3N"
-pol.compt <- pol.compt[-(which(is.na(pol.compt["ISO3N"]))),]
-pol.compt <- pol.compt[-(which(pol.compt[,3] < 0)),]
-pol.compt <- drop_na(pol.compt)
-final <- left_join(final, pol.compt)
+aft.merge$Year <- aft.merge$Year %>% as.numeric()
+aft.merge$ISO3N <- aft.merge$ISO3N %>% as.numeric()
+
+final <- left_join(export.merge, aft.merge)
 
 final <- left_join(final, AUT.merge)
+final <- left_join(final, worldbank)
+final <- left_join(final, polity)
 
-write.csv(final, "E:/AfT/final_withnaturalwithcompetition.csv")
-write.csv(final, "E:/AfT/Aftbimulticountry.csv")
+final <- left_join(final, region.name)
+final <- left_join(final, ethnic)
+final <- left_join(final, pr_fail)
+final <- left_join(final, total.merge)
+# final[which(is.na(final[,length(colnames(final))])),length(colnames(final))] <- 0
+
+## polity5
+# pol.compt <- read_xls("E:/AfT/polity5.xls")
+# pol.compt <- pol.compt %>% as.data.frame()
+# colnames(pol.compt)[which(colnames(pol.compt)=="year")] <- "Year"
+# pol.compt[,colnames(pol.compt)%>%length()+1] <- match(pol.compt[,1], cow_country[,1]) %>% cow_country[.,2]
+# colnames(pol.compt)[length(colnames(pol.compt))] <- "ISO3N"
+# pol.compt <- pol.compt[-(which(is.na(pol.compt["ISO3N"]))),]
+# pol.compt <- pol.compt[-(which(pol.compt[,3] < 0)),]
+# pol.compt <- drop_na(pol.compt)
+# final <- left_join(final, pol.compt)
+
+# final <- left_join(final, AUT.merge)
+
+# write.csv(final, "E:/AfT/final_withnaturalwithcompetition.csv")
+
+dreher <- read_dta("C:/Users/joshu/Desktop/DreherLanglotz2019_MonadicData.dta")
+
+dreher_use <- dreher[,c("reccode","year","IV_preperiod_agg")]
+
+countrycode::guess_field(dreher_use$reccode)
+
+url <- "http://www.axel-dreher.de/UNSCdata.xls"
+
+unsc <- rio::import(file = url, sheet = 2)
+
+unsc$ISO3N <- unsc$code %>% countrycode(origin = "iso3c", destination = "iso3n")
+colnames(unsc)[which(colnames(unsc) == "year")] <- "Year"
+unsc <- unsc[,c(4,5,6)]
+
+dreher_use$ISO3N <- dreher$reccode %>% countrycode(origin = "iso3c", destination = "iso3n")       
+colnames(dreher_use)[which(colnames(dreher_use) == "year")] <- "Year"
+dreher_use<- dreher_use[,c("Year","ISO3N","IV_preperiod_agg")]
+final <- left_join(final, unsc)
+
+write.csv(final, "E:/AfT/newfinal_0717.csv")
 
